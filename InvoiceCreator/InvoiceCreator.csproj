@@ -12,11 +12,14 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.25" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.25" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.25" />
+    <PackageReference Include="Syncfusion.Blazor.Grid" Version="33.1.45" />
+    <PackageReference Include="Syncfusion.Blazor.Themes" Version="33.1.45" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Data\Migrations\" />
     <Folder Include="EntityConfigurations\" />
+    <Folder Include="Services\" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,41 @@
+﻿@page "/invoices"
+@rendermode InteractiveServer
+
+@using InvoiceCreator.Models
+@using InvoiceMasterModel = InvoiceCreator.Models.InvoiceMaster
+@using Syncfusion.Blazor
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Buttons
+@inject InvoiceCreator.Services.IInvoiceMasterService InvoiceMasterService
+
+<h3>Invoice list</h3>
+
+@if (invoices == null)
+{
+    <p>Loading...</p>
+}
+else if (!invoices.Any())
+{
+    <p>No invoices found</p>
+}
+else
+{
+    <ul>
+        @foreach (var invoice in invoices)
+        {
+            <li>@invoice.CustomerName</li>
+        }
+    </ul>
+}
+
+@code {
+    private List<InvoiceMasterModel> invoices = new List<InvoiceMasterModel>();
+
+    protected override async Task OnInitializedAsync() => await LoadInvoicesAsync();
+
+    private async Task LoadInvoicesAsync()
+    {
+        invoices = await InvoiceMasterService.GetAllInvoiceMastersAsync();
+    }
+}

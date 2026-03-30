@@ -12,12 +12,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// syncFusion
 builder.Services.AddSyncfusionBlazor();
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+
+// Services
+builder.Services.AddScoped<InvoiceCreator.Services.IInvoiceMasterService, InvoiceCreator.Services.InvoiceMasterService>();
 
 builder.Services.AddAuthentication(options =>
     {
