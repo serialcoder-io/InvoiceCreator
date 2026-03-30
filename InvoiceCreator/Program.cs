@@ -22,6 +22,8 @@ builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuth
 
 // Services
 builder.Services.AddScoped<InvoiceCreator.Services.IInvoiceMasterService, InvoiceCreator.Services.InvoiceMasterService>();
+builder.Services.AddScoped<InvoiceCreator.Services.ICustomerService, InvoiceCreator.Services.CustomerService>();
+builder.Services.AddScoped<InvoiceCreator.Services.IProductService, InvoiceCreator.Services.ProductService>();
 
 builder.Services.AddAuthentication(options =>
     {

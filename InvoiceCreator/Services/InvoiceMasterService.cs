@@ -7,6 +7,7 @@ namespace InvoiceCreator.Services
     public interface IInvoiceMasterService
     {
         Task<List<InvoiceMaster>> GetAllInvoiceMastersAsync();
+        Task<InvoiceMaster> AddInvoiceMasterAsync(InvoiceMaster invoice);
     }
     public class InvoiceMasterService : IInvoiceMasterService
     {
@@ -31,6 +32,16 @@ namespace InvoiceCreator.Services
                     Status = im.Status
                 })
                 .ToListAsync();
+        }
+
+        public async Task<InvoiceMaster> AddInvoiceMasterAsync(InvoiceMaster invoice)
+        {
+            invoice.CreatedAt = DateTime.UtcNow;
+
+            _context.InvoiceMasters.Add(invoice);
+            await _context.SaveChangesAsync();
+
+            return invoice;
         }
     }
 }

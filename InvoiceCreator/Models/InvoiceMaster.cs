@@ -26,6 +26,7 @@ namespace InvoiceCreator.Models
         public DateTime CreatedAt { get; set; }
 
         public string CreatedById { get; set; } = null!;
+
         public ApplicationUser CreatedBy { get; set; } = null!;
 
         public required InvoiceMasterStatus Status { get; set; } = InvoiceMasterStatus.Pending;

@@ -1,6 +1,7 @@
 ﻿@page "/invoices"
 @rendermode InteractiveServer
-
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using InvoiceCreator.Models
 @using InvoiceMasterModel = InvoiceCreator.Models.InvoiceMaster
 @using Syncfusion.Blazor
@@ -8,8 +9,12 @@
 @using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.Buttons
 @inject InvoiceCreator.Services.IInvoiceMasterService InvoiceMasterService
+@inject NavigationManager NavManager
 
-<h3>Invoice list</h3>
+<div class="d-flex justify-content-between py-2">
+    <h2 class="fw-bold">Invoice list</h2>
+    <SfButton CssClass="e-primary" @onclick="AddINewInvoice">+ Create new invoice</SfButton>
+</div>
 
 @if (invoices == null)
 {
@@ -17,16 +22,54 @@
 }
 else if (!invoices.Any())
 {
-    <p>No invoices found</p>
+    <div>
+        <p>No invoices found</p>
+    </div>
 }
 else
 {
-    <ul>
-        @foreach (var invoice in invoices)
-        {
-            <li>@invoice.CustomerName</li>
-        }
-    </ul>
+    <div class="pb-5">
+        <SfGrid DataSource="@invoices" AllowSorting="true">
+            <GridColumns>
+                <GridColumn Field="InvoiceMasterId" Visible="false" HeaderText="ID" />
+                <GridColumn Field="CustomerName" HeaderText="Product Name" />
+                <GridColumn Field="GrossAmount" HeaderText="Gross Amount" Format="N2" />
+                <GridColumn Field="NetAmount" HeaderText="NetA Amount" Format="N2" />
+                <GridColumn HeaderText="Status">
+                    <Template Context="context">
+                        @{
+                            var invoice = context as InvoiceMasterModel;
+                        }
+
+                        @if (invoice?.Status == InvoiceMasterStatus.Completed)
+                        {
+                            <span class="badge bg-success">Completed</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-primary">@invoice?.Status</span>
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="CreatedAt" HeaderText="Creation date" />
+                <GridColumn HeaderText="Actions" Width="120" AllowSorting="false" AllowFiltering="false"
+                            TextAlign="TextAlign.Center">
+                    <Template Context="d">
+                        @{
+                            var item = (InvoiceMasterModel)d;
+                        }
+                        <button class="btn btn-sm btn-primary" @onclick="()=> GoToDetails(item.InvoiceMasterId)">
+                            Details
+                        </button>
+
+                        <button class="btn btn-sm btn-secondary" @onclick="GoToEdit">
+                            Edit
+                        </button>
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </div>
 }
 
 @code {
@@ -37,5 +80,21 @@ else
     private async Task LoadInvoicesAsync()
     {
         invoices = await InvoiceMasterService.GetAllInvoiceMastersAsync();
+    }
+
+    private void AddINewInvoice()
+    {
+        NavManager.NavigateTo($"/invoices/add");
+    }
+
+    void GoToEdit()
+    {
+        Console.WriteLine("Edit");
+    }
+
+
+    void GoToDetails(int id)
+    {
+        NavManager.NavigateTo($"/invoices/{id}");
     }
 }

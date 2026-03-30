@@ -1,0 +1,167 @@
+﻿@page "/invoices/add/"
+@rendermode InteractiveServer
+
+@using InvoiceCreator.FormModel
+@using InvoiceCreator.Models
+@using InvoiceCreator.Services
+@using Microsoft.AspNetCore.Authorization
+
+@inject ICustomerService CustomerService
+@inject IProductService ProductService
+
+@attribute [Authorize]
+
+<h3>New Invoice</h3>
+
+<!-- CUSTOMER -->
+<div>
+    <label>Customer</label>
+    <InputSelect @bind-Value="form.CustomerId" @onchange="OnCustomerChanged">
+        <option value="0">-- Select Customer --</option>
+        @foreach (var c in customers)
+        {
+            <option value="@c.CustomerId">@c.CustomerName</option>
+        }
+    </InputSelect>
+</div>
+
+<div>
+    <label>Customer Name</label>
+    <InputText @bind-Value="form.CustomerName" readonly />
+</div>
+
+<hr />
+
+<!-- GRID -->
+<SfGrid DataSource="@details" TValue="InvoiceDetailFormModel"
+        Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })"
+        AllowEditing="true">
+
+    <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"
+                      Mode="Syncfusion.Blazor.Grids.EditMode.Normal" />
+
+    <GridEvents TValue="InvoiceDetailFormModel" OnActionComplete="OnActionComplete" />
+
+    <GridColumns>
+
+        <!-- ID -->
+        <GridColumn Field="Id" IsPrimaryKey="true" Visible="false" />
+
+        <!-- PRODUCT -->
+        <GridColumn Field="ProductId" HeaderText="Product">
+            <EditTemplate Context="row">
+                @{
+                    var item = (InvoiceDetailFormModel)row;
+                }
+
+                <InputSelect TValue="int"
+                             Value="@item.ProductId"
+                             ValueChanged="@( (int val) => OnProductChanged(val, item) )"
+                             ValueExpression="() => item.ProductId">
+
+                    <option value="0">-- Product --</option>
+
+                    @foreach (var p in products)
+                    {
+                        <option value="@p.ProductId">@p.ProductName</option>
+                    }
+                </InputSelect>
+            </EditTemplate>
+        </GridColumn>
+
+        <!-- QUANTITY -->
+        <GridColumn Field="Quantity" HeaderText="Quantity" EditType="EditType.NumericEdit" />
+
+        <!-- NET -->
+        <GridColumn HeaderText="Net">
+            <Template Context="row">
+                @{
+                    var item = (InvoiceDetailFormModel)row;
+                }
+                @(item.Quantity * item.UnitPrice)
+            </Template>
+        </GridColumn>
+
+        <!-- GROSS -->
+        <GridColumn HeaderText="Gross">
+            <Template Context="row">
+                @{
+                    var item = (InvoiceDetailFormModel)row;
+                }
+                @(item.Quantity * item.UnitPrice * (1 + item.Tax / 100))
+            </Template>
+        </GridColumn>
+
+    </GridColumns>
+</SfGrid>
+
+@code {
+
+    private InvoiceMasterFormModel form = new();
+    private List<Customer> customers = new();
+    private List<Product> products = new();
+    private List<InvoiceDetailFormModel> details = new();
+
+    private int _nextId = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        customers = await CustomerService.GetAllCustomersAsync();
+        products = await ProductService.GetAllProductsAsync();
+    }
+
+    private void OnCustomerChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int id))
+        {
+            var customer = customers.FirstOrDefault(c => c.CustomerId == id);
+            if (customer != null)
+            {
+                form.CustomerName = customer.CustomerName;
+            }
+        }
+    }
+
+    private void OnProductChanged(int productId, InvoiceDetailFormModel row)
+    {
+        row.ProductId = productId;
+
+        var product = products.FirstOrDefault(p => p.ProductId == productId);
+
+        if (product != null)
+        {
+            row.ProductName = product.ProductName;
+            row.UnitPrice = product.UnitPrice;
+            row.Tax = product.Tax;
+        }
+        else
+        {
+            row.ProductName = "No product";
+        }
+    }
+
+    private void OnToolbarClick(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        if (args.Item.Id == "Grid_add")
+        {
+            details.Add(new InvoiceDetailFormModel
+            {
+                Id = _nextId++,
+                Quantity = 1,
+                UnitPrice = 0,
+                Tax = 0
+            });
+
+            StateHasChanged();
+        }
+    }
+
+    private void OnActionComplete(ActionEventArgs<InvoiceDetailFormModel> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save ||
+            args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
+        {
+            StateHasChanged();
+        }
+    }
+}
