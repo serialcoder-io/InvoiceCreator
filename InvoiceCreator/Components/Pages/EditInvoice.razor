@@ -1,11 +1,323 @@
 ﻿@page "/invoices/edit/{id:int}"
 @rendermode InteractiveServer
+
+@using InvoiceCreator.FormModel
+@using InvoiceCreator.Models
+@using InvoiceCreator.Services
 @using Microsoft.AspNetCore.Authorization
+@using Syncfusion.Blazor.Buttons
+
+@inject ICustomerService CustomerService
+@inject IProductService ProductService
+@inject IInvoiceMasterService InvoiceMasterService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
 @attribute [Authorize]
 
-<h3>edit invoice @id</h3>
+<div class="d-flex justify-content-between py-2">
+    <h2 class="fw-bold">Edit Invoice #@id</h2>
+    <SfButton CssClass="e-primary" @onclick="SaveInvoice">Save</SfButton>
+</div>
+
+<!-- CUSTOMER -->
+<div class="d-flex flex-column pb-2">
+    <label>Customer</label>
+    <InputSelect TValue="int"
+                 class="form-select"
+                 Value="form.CustomerId"
+                 ValueChanged="OnCustomerChanged"
+                 ValueExpression="() => form.CustomerId">
+
+        <option value="0">-- Select Customer --</option>
+
+        @foreach (var c in customers)
+        {
+            <option value="@c.CustomerId">@c.CustomerName</option>
+        }
+    </InputSelect>
+</div>
+
+<div class="d-flex flex-column">
+    <label>Customer Name</label>
+    <input class="form-control" value="@form.CustomerName" readonly />
+</div>
+
+<hr />
+
+<!-- GRID -->
+<SfGrid DataSource="@details"
+        TValue="InvoiceDetailFormModel"
+        Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })"
+        AllowEditing="true"
+        ToolbarClick="OnToolbarClick">
+
+    <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"
+                      Mode="Syncfusion.Blazor.Grids.EditMode.Normal" />
+
+    <GridEvents TValue="InvoiceDetailFormModel"
+                OnActionComplete="OnActionComplete" />
+
+    <GridColumns>
+
+        <!-- ID UI -->
+        <GridColumn Field="Id" IsPrimaryKey="true" Visible="false" />
+
+        <!-- PRODUCT -->
+        <GridColumn Field="ProductId" HeaderText="Product">
+
+            <Template Context="row">
+                @((row as InvoiceDetailFormModel).ProductName)
+            </Template>
+
+            <EditTemplate Context="row">
+                @{
+                    var item = (InvoiceDetailFormModel)row;
+                }
+
+                <InputSelect TValue="int"
+                             class="form-select"
+                             Value="@item.ProductId"
+                             ValueChanged="@( (int val) => OnProductChanged(val, item) )"
+                             ValueExpression="@(() => item.ProductId)">
+
+                    <option value="0">-- Product --</option>
+
+                    @foreach (var p in products)
+                    {
+                        <option value="@p.ProductId">@p.ProductName</option>
+                    }
+
+                </InputSelect>
+            </EditTemplate>
+
+        </GridColumn>
+
+        <!-- QUANTITY -->
+        <GridColumn Field="Quantity" HeaderText="Quantity" EditType="EditType.NumericEdit" />
+
+        <!-- NET -->
+        <GridColumn HeaderText="Net Amount">
+            <Template Context="row">
+                @{
+                    var item = (InvoiceDetailFormModel)row;
+                }
+                @(item.Quantity* item.UnitPrice)
+            </Template>
+        </GridColumn>
+
+        <!-- GROSS -->
+        <GridColumn HeaderText="Gross Amount">
+            <Template Context="row">
+                @{
+                    var item = (InvoiceDetailFormModel)row;
+                }
+                @(item.Quantity* item.UnitPrice * (1 + item.Tax / 100m))
+            </Template>
+        </GridColumn>
+
+    </GridColumns>
+</SfGrid>
 
 @code {
+
     [Parameter]
     public int id { get; set; }
+
+    private InvoiceMasterFormModel form = new();
+
+    private List<Customer> customers = new();
+    private List<Product> products = new();
+
+    private List<InvoiceDetailFormModel> details = new();
+
+    private List<InvoiceDetailFormModel> newDetails = new();
+    private List<InvoiceDetailFormModel> updatedDetails = new();
+    private List<int> deletedDetails = new();
+
+    private string? currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        customers = await CustomerService.GetAllCustomersAsync();
+        products = await ProductService.GetAllProductsAsync();
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        var invoice = await InvoiceMasterService.GetInvoiceMasterByIdAsync(id);
+
+        if (invoice == null)
+            return;
+
+        form.CustomerId = invoice.CustomerId;
+        form.CustomerName = invoice.CustomerName;
+        form.Status = invoice.Status;
+
+        details = invoice.InvoiceDetails.Select(d => new InvoiceDetailFormModel
+        {
+            Id = d.InvoiceDetailId,
+            ProductId = d.ProductId,
+            ProductName = d.Product?.ProductName ?? "",
+            Quantity = d.Quantity,
+            UnitPrice = d.Product != null ? d.Product.UnitPrice : 0,
+            Tax = d.Product != null ? d.Product.Tax : 0
+        }).ToList();
+    }
+
+    private void OnCustomerChanged(int val)
+    {
+        form.CustomerId = val;
+
+        var customer = customers.FirstOrDefault(c => c.CustomerId == val);
+        if (customer != null)
+            form.CustomerName = customer.CustomerName;
+    }
+
+    private void OnProductChanged(int productId, InvoiceDetailFormModel row)
+    {
+        if (productId == 0) return;
+
+        row.ProductId = productId;
+
+        var product = products.FirstOrDefault(p => p.ProductId == productId);
+
+        if (product != null)
+        {
+            row.ProductName = product.ProductName;
+            row.UnitPrice = product.UnitPrice;
+            row.Tax = product.Tax;
+        }
+
+        if (row.Id > 0 && !updatedDetails.Contains(row))
+            updatedDetails.Add(row);
+
+        StateHasChanged();
+    }
+
+    private void OnToolbarClick(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        if (args.Item.Id == "Grid_add")
+        {
+            var newItem = new InvoiceDetailFormModel
+            {
+                Id = 0,
+                Quantity = 1
+            };
+
+            details.Add(newItem);
+            newDetails.Add(newItem);
+
+            StateHasChanged();
+        }
+    }
+
+    private void OnActionComplete(ActionEventArgs<InvoiceDetailFormModel> args)
+    {
+        var item = args.Data;
+
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            if (item.Id == 0)
+            {
+                if (!newDetails.Contains(item))
+                    newDetails.Add(item);
+            }
+            else
+            {
+                if (!updatedDetails.Contains(item))
+                    updatedDetails.Add(item);
+            }
+        }
+
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
+        {
+            if (item.Id > 0)
+                deletedDetails.Add(item.Id);
+
+            newDetails.Remove(item);
+            updatedDetails.Remove(item);
+            details.Remove(item);
+        }
+
+
+        StateHasChanged();
+    }
+
+    private async Task SaveInvoice()
+    {
+        if (string.IsNullOrEmpty(currentUserId))
+            throw new Exception("User not authenticated");
+
+        var newEntities = newDetails.Select(d =>
+        {
+            var product = products.First(p => p.ProductId == d.ProductId);
+
+            var net = product.UnitPrice * d.Quantity;
+            var gross = net * (1 + product.Tax / 100m);
+
+            return new InvoiceDetail
+            {
+                ProductId = d.ProductId,
+                Quantity = d.Quantity,
+                NetAmount = net,
+                GrossAmount = gross
+            };
+        }).ToList();
+
+        // merge new and old details
+        
+
+        var updatedEntities = updatedDetails.Select(d =>
+        {
+            var product = products.First(p => p.ProductId == d.ProductId);
+
+            var net = product.UnitPrice * d.Quantity;
+            var gross = net * (1 + product.Tax / 100m);
+
+            return new InvoiceDetail
+            {
+                InvoiceDetailId = d.Id,
+                ProductId = d.ProductId,
+                Quantity = d.Quantity,
+                NetAmount = net,
+                GrossAmount = gross
+            };
+        }).ToList();
+        
+
+        var allDetails = details.ToList(); // UNE SEULE SOURCE DE VÉRITÉ
+
+        var net = allDetails.Sum(d =>
+        {
+            var product = products.First(p => p.ProductId == d.ProductId);
+            return product.UnitPrice * d.Quantity;
+        });
+
+        var gross = allDetails.Sum(d =>
+        {
+            var product = products.First(p => p.ProductId == d.ProductId);
+            var netLine = product.UnitPrice * d.Quantity;
+            return netLine * (1 + product.Tax / 100m);
+        });
+
+        var invoiceMaster = new InvoiceMaster
+        {
+            InvoiceMasterId = id,
+            CustomerId = form.CustomerId,
+            CustomerName = form.CustomerName,
+            Status = form.Status,
+            CreatedAt = DateTime.Now,
+            CreatedById = currentUserId,
+
+            NetAmount = net,
+            GrossAmount = gross
+        };
+
+        await InvoiceMasterService.UpdateInvoiceMasterAsync(
+            invoiceMaster,
+            newEntities,
+            updatedEntities,
+            deletedDetails
+        );
+    }
 }

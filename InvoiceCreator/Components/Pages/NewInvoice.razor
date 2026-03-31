@@ -234,6 +234,7 @@
         // 🔥 Appel du service (propre)
         var saved = await InvoiceMasterService.AddInvoiceMasterAsync(invoiceMaster, invoiceDetails);
 
-        Console.WriteLine($"Saved Invoice ID: {saved.InvoiceMasterId}");
+        NavManager.NavigateTo($"/invoices/{saved.InvoiceMasterId}");
+        
     }
 }

@@ -62,7 +62,7 @@ else
                             Details
                         </button>
 
-                        <button class="btn btn-sm btn-secondary" @onclick="GoToEdit">
+                        <button class="btn btn-sm btn-secondary" @onclick="() => GoToEdit(item.InvoiceMasterId)">
                             Edit
                         </button>
                     </Template>
@@ -87,9 +87,9 @@ else
         NavManager.NavigateTo($"/invoices/add");
     }
 
-    void GoToEdit()
+    void GoToEdit(int id)
     {
-        Console.WriteLine("Edit");
+        NavManager.NavigateTo($"/invoices/edit/{id}");
     }
 
 
