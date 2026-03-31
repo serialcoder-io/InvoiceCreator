@@ -1,5 +1,46 @@
-﻿<h3>Products</h3>
+﻿@page "/products"
+@rendermode InteractiveServer
+
+@using ProductModel = InvoiceCreator.Models.Product
+@using Syncfusion.Blazor
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Buttons
+@inject InvoiceCreator.Services.IProductService ProductService
+
+
+<div class="py-2">
+    <h2 class="fw-bold">Product list</h2>
+</div>
+
+<div class="mb-5">
+    <SfGrid TIem="ProductModel" DataSource="products" AllowPaging="false" AllowSorting="true">
+        <GridColumns>
+            <GridColumn Field="ProductId" Visible="false" HeaderText="ID" Width="80" TextAlign="TextAlign.Center" />
+            <GridColumn Field="ProductName" HeaderText="Product Name" Width="250" />
+            <GridColumn Field="UnitPrice" HeaderText="Unit Price" Format="N2" Width="250" />
+            <GridColumn Field="Tax" HeaderText="Tax" Format="N2" Width="250" />
+        
+        </GridColumns>
+    </SfGrid>
+</div>
+
+
 
 @code {
+    private List<ProductModel> products = new();
+    private bool isDialogOpen;
+    private string dialogTitle = "";
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProductsAsync();
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        products = await ProductService.GetAllProductsAsync();
+    }
 
 }
