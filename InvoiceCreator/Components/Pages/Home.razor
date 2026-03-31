@@ -1,7 +1,55 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+
+@using Syncfusion.Blazor.Buttons
+
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
 
-Welcome to your new app.
+
+<AuthorizeView>
+    <NotAuthorized>
+        <div class="d-flex flex-column justify-content-center align-items-center gap-3">
+            <h1>Welcome to Invoice Creator</h1>
+            <div class="d-flex justify-content-center gap-3">
+                
+                <SfButton CssClass="e-primary" @onclick="GoToLogin">
+                    Login
+                </SfButton>
+
+                <SfButton CssClass="e-primary" @onclick="GoToRegister">
+                    Register
+                </SfButton>
+            </div>
+        </div>
+
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    @code {
+        protected override async Task OnInitializedAsync()
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                NavManager.NavigateTo("/invoices");
+            }
+        }
+    }
+
+    void GoToLogin()
+    {
+        NavManager.NavigateTo("Account/Login");
+    }
+
+    void GoToRegister()
+    {
+        NavManager.NavigateTo("Account/Register");
+    }
+}

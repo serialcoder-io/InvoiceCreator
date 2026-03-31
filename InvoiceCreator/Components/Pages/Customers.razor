@@ -6,7 +6,11 @@
 @using Syncfusion.Blazor.Grids
 @using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.Buttons
+@using Microsoft.AspNetCore.Authorization
+
 @inject InvoiceCreator.Services.ICustomerService CustomerService
+
+@attribute [Authorize]
 
 <div class="py-2">
     <h2 class="fw-bold">Customer list</h2>
