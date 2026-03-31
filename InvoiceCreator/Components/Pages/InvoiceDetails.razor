@@ -1,11 +1,87 @@
 ﻿@page "/invoices/{id:int}"
 @rendermode InteractiveServer
+
+@using InvoiceCreator.Models
+@using InvoiceCreator.Services
 @using Microsoft.AspNetCore.Authorization
+
+@inject IInvoiceMasterService InvoiceMasterService
+
 @attribute [Authorize]
 
-<h3>InvoiceDetails for invoice @id</h3>
+<h3 class="mb-3">Invoice Details #@id</h3>
+
+@if (invoice == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <!-- 🔹 INFOS FACTURE -->
+    <div class="card p-3 mb-3">
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Customer:</strong> @invoice.CustomerName
+            </div>
+
+            <div class="col-md-6">
+                <strong>Created At:</strong> @invoice.CreatedAt.ToString("yyyy-MM-dd")
+            </div>
+        </div>
+
+        <hr />
+
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Net Amount:</strong> @invoice.NetAmount
+            </div>
+
+            <div class="col-md-6">
+                <strong>Gross Amount:</strong> @invoice.GrossAmount
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 DETAILS (GRID READ-ONLY) -->
+    <SfGrid DataSource="@invoice.InvoiceDetails"
+            TValue="InvoiceDetail"
+            AllowEditing="false"
+            AllowAdding="false"
+            AllowDeleting="false">
+
+        <GridColumns>
+
+            <GridColumn Field="InvoiceDetailId"
+                        HeaderText="ID"
+                        IsPrimaryKey="true"
+                        Visible="false" />
+
+            <GridColumn Field="Product.ProductName"
+                        HeaderText="Product" />
+
+            <GridColumn Field="Quantity"
+                        HeaderText="Quantity" />
+
+            <GridColumn Field="NetAmount"
+                        HeaderText="Net" />
+
+            <GridColumn Field="GrossAmount"
+                        HeaderText="Gross" />
+
+        </GridColumns>
+
+    </SfGrid>
+}
 
 @code {
+
     [Parameter]
     public int id { get; set; }
+
+    private InvoiceMaster? invoice;
+
+    protected override async Task OnInitializedAsync()
+    {
+        invoice = await InvoiceMasterService.GetInvoiceMasterByIdAsync(id);
+    }
 }
