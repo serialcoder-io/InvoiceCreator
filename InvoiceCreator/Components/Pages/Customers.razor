@@ -1,5 +1,132 @@
-﻿<h3>Customers</h3>
+﻿@page "/customers"
+@rendermode InteractiveServer
+
+@using CustomerModel = InvoiceCreator.Models.Customer
+@using Syncfusion.Blazor
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Buttons
+@inject InvoiceCreator.Services.ICustomerService CustomerService
+
+<div class="mb-3">
+    <SfButton CssClass="e-primary" OnClick="OpenAddCustomer">+ Add New Customer</SfButton>
+</div>
+
+<SfDialog Visible="@isDialogOpen" Width="350px" ShowCloseIcon="true" Header="@dialogTitle" IsModal="true"
+          OnClose="CloseDialog">
+    <div class="p-2">
+        <div class="mb-2">
+            <label class="form-label">Customer name</label>
+            <input class="form-control" @bind="editingCustomer.CustomerName" />
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+            <SfButton CssClass="e-outline" OnClick="CloseDialog">Cancel</SfButton>
+            <SfButton CssClass="e-primary" OnClick="SaveCustomer">Save</SfButton>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="text-danger mt-2">@errorMessage</div>
+        }
+    </div>
+</SfDialog>
+
+<SfGrid DataSource="customers" AllowPaging="false" AllowSorting="true"
+        Height="450px">
+    <GridColumns>
+        <GridColumn Field="CustomerId" Visible="false" HeaderText="ID" Width="80" TextAlign="TextAlign.Center" />
+        <GridColumn Field="CustomerName" HeaderText="Customer Name" Width="250" />
+        <GridColumn HeaderText="Actions" Width="120" AllowSorting="false" AllowFiltering="false"
+                    TextAlign="TextAlign.Center">
+            <Template>
+                <button class="btn btn-sm btn-warning" title="Edit"
+                        @onclick="() => EditCustomer((CustomerModel)context)">
+                    Edit
+                </button>
+            </Template>
+        </GridColumn>
+    </GridColumns>
+</SfGrid>
 
 @code {
+    private List<CustomerModel> customers = new();
+    private CustomerModel editingCustomer = new CustomerModel { CustomerName = string.Empty };
+    private bool isDialogOpen;
+    private string dialogTitle = "";
+    private string errorMessage = "";
+    private bool isEditMode;
 
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomersAsync();
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        customers = await CustomerService.GetAllCustomersAsync();
+    }
+
+    private void OpenAddCustomer()
+    {
+        isEditMode = false;
+        dialogTitle = "Add New Customer";
+        editingCustomer = new CustomerModel { CustomerName = string.Empty };
+        errorMessage = "";
+        isDialogOpen = true;
+    }
+
+    private void EditCustomer(CustomerModel customer)
+    {
+        isEditMode = true;
+        dialogTitle = "Edit Customer";
+        editingCustomer = new CustomerModel
+        {
+            CustomerId = customer.CustomerId,
+            CustomerName = customer.CustomerName
+        };
+        errorMessage = "";
+        isDialogOpen = true;
+    }
+
+    private async Task SaveCustomer()
+    {
+        if (string.IsNullOrWhiteSpace(editingCustomer.CustomerName))
+        {
+            errorMessage = "Customer name is required.";
+            return;
+        }
+
+        try
+        {
+            if (isEditMode)
+            {
+                await CustomerService.UpdateCustomerAsync(editingCustomer);
+            }
+            else
+            {
+                await CustomerService.AddCustomerAsync(editingCustomer);
+            }
+
+            isDialogOpen = false;
+            await LoadCustomersAsync();
+        }
+        catch (ArgumentException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        catch
+        {
+            errorMessage = "An unexpected error occurred.";
+        }
+    }
+
+    private void CloseDialog()
+    {
+        isDialogOpen = false;
+        errorMessage = "";
+    }
 }
