@@ -20,7 +20,8 @@ public class InvoiceDetailsConfiguration : IEntityTypeConfiguration<InvoiceDetai
         .HasOne(i => i.Product)
         .WithMany(i => i.InvoiceDetails)
         .HasForeignKey(i => i.ProductId)
-        .IsRequired();
+        .IsRequired()
+         .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(i => new { i.InvoiceMasterId, i.ProductId }).IsUnique();
     }
