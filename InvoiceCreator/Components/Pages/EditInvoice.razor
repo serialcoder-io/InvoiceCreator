@@ -154,6 +154,7 @@
         form.CustomerName = invoice.CustomerName;
         form.Status = invoice.Status;
 
+        // initialize details for invoicemaster
         details = invoice.InvoiceDetails.Select(d => new InvoiceDetailFormModel
         {
             Id = d.InvoiceDetailId,
@@ -176,7 +177,7 @@
 
     private void OnProductChanged(int productId, InvoiceDetailFormModel row)
     {
-        if (productId == 0) return;
+        if (productId == 0) return; // no selected product
 
         row.ProductId = productId;
 
@@ -218,6 +219,7 @@
 
         if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
         {
+            // if the new line doesn't existe in db
             if (item.Id == 0)
             {
                 if (!newDetails.Contains(item))
@@ -239,7 +241,6 @@
             updatedDetails.Remove(item);
             details.Remove(item);
         }
-
 
         StateHasChanged();
     }
@@ -264,8 +265,6 @@
                 GrossAmount = gross
             };
         }).ToList();
-
-        // merge new and old details
         
 
         var updatedEntities = updatedDetails.Select(d =>
@@ -286,7 +285,7 @@
         }).ToList();
         
 
-        var allDetails = details.ToList(); // UNE SEULE SOURCE DE VÉRITÉ
+        var allDetails = details.ToList();
 
         var net = allDetails.Sum(d =>
         {
@@ -321,7 +320,7 @@
             deletedDetails
         );
 
-        // 🔥 Recharger depuis la base
+        // Recharger depuis la base
         var invoiceFromDb = await InvoiceMasterService.GetInvoiceMasterByIdAsync(id);
 
         net = invoiceFromDb.InvoiceDetails.Sum(d =>
@@ -334,16 +333,16 @@
             return netLine * (1 + d.Product.Tax / 100m);
         });
 
-        // 🔥 Update des montants
+        // Update net and gross amounts
         invoiceFromDb.NetAmount = net;
         invoiceFromDb.GrossAmount = gross;
 
         await InvoiceMasterService.UpdateInvoiceMasterAsync(
             invoiceFromDb,
             new List<InvoiceDetail>(),
-    new List<InvoiceDetail>(),
-    new List<int>()
-        );
+            new List<InvoiceDetail>(),
+            new List<int>()
+         );
         NavManager.NavigateTo($"/invoices/{id}");
     }
 }

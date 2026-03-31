@@ -53,13 +53,7 @@ namespace InvoiceCreator.Services
                 throw new ArgumentException("Customer name is required.");
             }
 
-            var existing = await _context.Customers.FindAsync(customer.CustomerId);
-
-            if (existing == null)
-            {
-                throw new InvalidOperationException($"Customer {customer.CustomerId} not found.");
-            }
-
+            var existing = await _context.Customers.FindAsync(customer.CustomerId) ?? throw new InvalidOperationException($"Customer {customer.CustomerId} not found.");
             existing.CustomerName = customer.CustomerName.Trim();
 
             await _context.SaveChangesAsync();

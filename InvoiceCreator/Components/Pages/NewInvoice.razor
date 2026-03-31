@@ -137,7 +137,7 @@
         currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     }
 
-
+    
     private void OnCustomerChanged(int id)
     {
         form.CustomerId = id;
@@ -231,7 +231,6 @@
             GrossAmount = invoiceDetails.Sum(d => d.GrossAmount)
         };
 
-        // 🔥 Appel du service (propre)
         var saved = await InvoiceMasterService.AddInvoiceMasterAsync(invoiceMaster, invoiceDetails);
 
         NavManager.NavigateTo($"/invoices/{saved.InvoiceMasterId}");
