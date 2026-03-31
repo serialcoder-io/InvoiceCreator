@@ -5,18 +5,29 @@
 @using InvoiceCreator.Models
 @using InvoiceCreator.Services
 @using Microsoft.AspNetCore.Authorization
+@using Syncfusion.Blazor.Buttons
+@inject NavigationManager NavManager
 
 @inject ICustomerService CustomerService
 @inject IProductService ProductService
+@inject IInvoiceMasterService InvoiceMasterService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 @attribute [Authorize]
 
-<h3>New Invoice</h3>
+<div class="d-flex justify-content-between py-2">
+    <h2 class="fw-bold">New Invoice</h2>
+    <SfButton CssClass="e-primary" @onclick="SaveInvoice">Save</SfButton>
+</div>
 
 <!-- CUSTOMER -->
-<div>
+<div class="d-flex flex-column pb-2">
     <label>Customer</label>
-    <InputSelect @bind-Value="form.CustomerId" @onchange="OnCustomerChanged">
+    <InputSelect TValue="int"
+                 class="form-select"
+                 Value="form.CustomerId"
+                 ValueChanged="@( (int val) => OnCustomerChanged(val) )"
+                 ValueExpression="() => form.CustomerId">
         <option value="0">-- Select Customer --</option>
         @foreach (var c in customers)
         {
@@ -25,9 +36,11 @@
     </InputSelect>
 </div>
 
-<div>
+<div class="d-flex flex-column">
     <label>Customer Name</label>
-    <InputText @bind-Value="form.CustomerName" readonly />
+    <input class="form-control"
+           value="@form.CustomerName"
+           readonly />
 </div>
 
 <hr />
@@ -49,12 +62,21 @@
 
         <!-- PRODUCT -->
         <GridColumn Field="ProductId" HeaderText="Product">
+            <Template Context="row">
+                @{
+                    var item = (InvoiceDetailFormModel)row;
+                }
+
+                @item.ProductName
+            </Template>
+
             <EditTemplate Context="row">
                 @{
                     var item = (InvoiceDetailFormModel)row;
                 }
 
                 <InputSelect TValue="int"
+                             class="form-select"
                              Value="@item.ProductId"
                              ValueChanged="@( (int val) => OnProductChanged(val, item) )"
                              ValueExpression="() => item.ProductId">
@@ -73,7 +95,7 @@
         <GridColumn Field="Quantity" HeaderText="Quantity" EditType="EditType.NumericEdit" />
 
         <!-- NET -->
-        <GridColumn HeaderText="Net">
+        <GridColumn HeaderText="Net Amount">
             <Template Context="row">
                 @{
                     var item = (InvoiceDetailFormModel)row;
@@ -83,7 +105,7 @@
         </GridColumn>
 
         <!-- GROSS -->
-        <GridColumn HeaderText="Gross">
+        <GridColumn HeaderText="Gross Amount">
             <Template Context="row">
                 @{
                     var item = (InvoiceDetailFormModel)row;
@@ -101,6 +123,7 @@
     private List<Customer> customers = new();
     private List<Product> products = new();
     private List<InvoiceDetailFormModel> details = new();
+    private string? currentUserId = null;
 
     private int _nextId = 1;
 
@@ -108,20 +131,26 @@
     {
         customers = await CustomerService.GetAllCustomersAsync();
         products = await ProductService.GetAllProductsAsync();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     }
 
-    private void OnCustomerChanged(ChangeEventArgs e)
+
+    private void OnCustomerChanged(int id)
     {
-        if (int.TryParse(e.Value?.ToString(), out int id))
+        form.CustomerId = id;
+
+        var customer = customers.FirstOrDefault(c => c.CustomerId == id);
+
+        if (customer != null)
         {
-            var customer = customers.FirstOrDefault(c => c.CustomerId == id);
-            if (customer != null)
-            {
-                form.CustomerName = customer.CustomerName;
-            }
+            form.CustomerName = customer.CustomerName;
         }
     }
 
+    // Each time the product change, set product name, compute and set UnitPrice and Tax
     private void OnProductChanged(int productId, InvoiceDetailFormModel row)
     {
         row.ProductId = productId;
@@ -138,8 +167,11 @@
         {
             row.ProductName = "No product";
         }
+        
+        StateHasChanged();
     }
 
+    // Notify syncfusion that the state has changed
     private void OnToolbarClick(Syncfusion.Blazor.Navigations.ClickEventArgs args)
     {
         if (args.Item.Id == "Grid_add")
@@ -163,5 +195,45 @@
         {
             StateHasChanged();
         }
+    }
+
+    private async Task SaveInvoice()
+    {
+        if (string.IsNullOrEmpty(currentUserId))
+            throw new Exception("User not authenticated");
+
+        var invoiceDetails = details.Select(d =>
+        {
+            var product = products.First(p => p.ProductId == d.ProductId);
+
+            var net = product.UnitPrice * d.Quantity;
+            var gross = net * (1 + product.Tax / 100m);
+
+            return new InvoiceDetail
+            {
+                ProductId = product.ProductId,
+                Quantity = d.Quantity,
+                NetAmount = net,
+                GrossAmount = gross
+            };
+        }).ToList();
+
+        var invoiceMaster = new InvoiceMaster
+        {
+            CustomerId = form.CustomerId,
+            CustomerName = form.CustomerName,
+
+            CreatedAt = DateTime.Now,
+            CreatedById = currentUserId!,
+            Status = InvoiceMasterStatus.Pending,
+
+            NetAmount = invoiceDetails.Sum(d => d.NetAmount),
+            GrossAmount = invoiceDetails.Sum(d => d.GrossAmount)
+        };
+
+        // 🔥 Appel du service (propre)
+        var saved = await InvoiceMasterService.AddInvoiceMasterAsync(invoiceMaster, invoiceDetails);
+
+        Console.WriteLine($"Saved Invoice ID: {saved.InvoiceMasterId}");
     }
 }

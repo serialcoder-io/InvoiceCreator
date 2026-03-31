@@ -7,7 +7,7 @@ namespace InvoiceCreator.Services
     public interface IInvoiceMasterService
     {
         Task<List<InvoiceMaster>> GetAllInvoiceMastersAsync();
-        Task<InvoiceMaster> AddInvoiceMasterAsync(InvoiceMaster invoice);
+        Task<InvoiceMaster> AddInvoiceMasterAsync(InvoiceMaster master, List<InvoiceDetail> details);
     }
     public class InvoiceMasterService : IInvoiceMasterService
     {
@@ -34,14 +34,21 @@ namespace InvoiceCreator.Services
                 .ToListAsync();
         }
 
-        public async Task<InvoiceMaster> AddInvoiceMasterAsync(InvoiceMaster invoice)
+        public async Task<InvoiceMaster> AddInvoiceMasterAsync(InvoiceMaster master, List<InvoiceDetail> details)
         {
-            invoice.CreatedAt = DateTime.UtcNow;
+            // Lier les détails
+            master.InvoiceDetails = details;
 
-            _context.InvoiceMasters.Add(invoice);
+            // Calcul des totaux
+            master.NetAmount = details.Sum(d => d.NetAmount);
+            master.GrossAmount = details.Sum(d => d.GrossAmount);
+
+            // Ajouter
+            _context.InvoiceMasters.Add(master);
+
             await _context.SaveChangesAsync();
 
-            return invoice;
+            return master; // 🔥 utile pour récupérer l'ID
         }
     }
 }
