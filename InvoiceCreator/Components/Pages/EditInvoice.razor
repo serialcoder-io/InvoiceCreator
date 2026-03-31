@@ -319,5 +319,29 @@
             updatedEntities,
             deletedDetails
         );
+
+        // 🔥 Recharger depuis la base
+        var invoiceFromDb = await InvoiceMasterService.GetInvoiceMasterByIdAsync(id);
+
+        net = invoiceFromDb.InvoiceDetails.Sum(d =>
+            d.Product.UnitPrice * d.Quantity
+        );
+
+        gross = invoiceFromDb.InvoiceDetails.Sum(d =>
+        {
+            var netLine = d.Product.UnitPrice * d.Quantity;
+            return netLine * (1 + d.Product.Tax / 100m);
+        });
+
+        // 🔥 Update des montants
+        invoiceFromDb.NetAmount = net;
+        invoiceFromDb.GrossAmount = gross;
+
+        await InvoiceMasterService.UpdateInvoiceMasterAsync(
+            invoiceFromDb,
+            new List<InvoiceDetail>(),
+    new List<InvoiceDetail>(),
+    new List<int>()
+        );
     }
 }
