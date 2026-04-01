@@ -57,7 +57,7 @@ namespace InvoiceCreator.Services
             .FirstOrDefaultAsync(i => i.InvoiceMasterId == id);
                 }
 
-        // 🔹 ADD
+        // ADD new invoice master
         public async Task<InvoiceMaster> AddInvoiceMasterAsync(
             InvoiceMaster master,
             List<InvoiceDetail> details)
@@ -74,7 +74,7 @@ namespace InvoiceCreator.Services
             return master;
         }
 
-        // 🔹 UPDATE
+        // UPDATE existing invoice master
         public async Task UpdateInvoiceMasterAsync(
             InvoiceMaster master,
             List<InvoiceDetail> newDetails,
@@ -85,7 +85,7 @@ namespace InvoiceCreator.Services
 
             try
             {
-                // 🔹 Charger l'entité existante
+                // load 
                 var existingMaster = await _context.InvoiceMasters
                     .Include(i => i.InvoiceDetails)
                     .FirstOrDefaultAsync(i => i.InvoiceMasterId == master.InvoiceMasterId);
@@ -93,12 +93,12 @@ namespace InvoiceCreator.Services
                 if (existingMaster == null)
                     throw new Exception("Invoice not found");
 
-                // 🔹 Update master
+                // Update master
                 existingMaster.CustomerId = master.CustomerId;
                 existingMaster.CustomerName = master.CustomerName;
                 existingMaster.Status = master.Status;
 
-                // 🔹 DELETE
+                // DELETE
                 if (deletedDetails.Any())
                 {
                     var toDelete = await _context.InvoiceDetails
@@ -108,7 +108,7 @@ namespace InvoiceCreator.Services
                     _context.InvoiceDetails.RemoveRange(toDelete);
                 }
 
-                // 🔹 UPDATE
+                // UPDATE
                 foreach (var detail in updatedDetails)
                 {
                     var existingDetail = await _context.InvoiceDetails
@@ -123,7 +123,7 @@ namespace InvoiceCreator.Services
                     }
                 }
 
-                // 🔹 INSERT
+                // INSERT
                 if (newDetails.Any())
                 {
                     foreach (var detail in newDetails)
@@ -134,7 +134,7 @@ namespace InvoiceCreator.Services
                     await _context.InvoiceDetails.AddRangeAsync(newDetails);
                 }
 
-                // 🔹 Recalcul des totaux (version propre)
+                // Compute amounts
                 var allDetails = await _context.InvoiceDetails
                     .Where(d => d.InvoiceMasterId == existingMaster.InvoiceMasterId)
                     .ToListAsync();
@@ -142,7 +142,7 @@ namespace InvoiceCreator.Services
                 existingMaster.NetAmount = allDetails.Sum(d => d.NetAmount);
                 existingMaster.GrossAmount = allDetails.Sum(d => d.GrossAmount);
 
-                // 🔹 Save
+                // Save
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }

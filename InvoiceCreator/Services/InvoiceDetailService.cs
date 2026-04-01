@@ -21,7 +21,7 @@ namespace InvoiceCreator.Services
 
         public async Task<InvoiceDetail> AddInvoiceDetailAsync(InvoiceDetail detail)
         {
-            // Récupérer le produit pour calculer les montants
+            // retrieve products to compute amounts
             var product = await _context.Products
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ProductId == detail.ProductId);
@@ -29,17 +29,14 @@ namespace InvoiceCreator.Services
             if (product == null)
                 throw new Exception("Product not found");
 
-            // Calcul
             var net = product.UnitPrice * detail.Quantity;
             var gross = net * (1 + product.Tax / 100m);
 
             detail.NetAmount = net;
             detail.GrossAmount = gross;
 
-            // Ajouter
             _context.InvoiceDetails.Add(detail);
 
-            // Sauvegarder
             await _context.SaveChangesAsync();
 
             return detail;
