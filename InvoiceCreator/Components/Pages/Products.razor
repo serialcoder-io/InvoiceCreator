@@ -7,13 +7,44 @@
 @using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.Buttons
 @using Microsoft.AspNetCore.Authorization
-
-@inject InvoiceCreator.Services.IProductService ProductService
 @attribute [Authorize]
 
-<div class="py-2">
+@inject InvoiceCreator.Services.IProductService ProductService
+
+
+<div class="d-flex justify-content-between py-2">
     <h2 class="fw-bold">Product list</h2>
+    <SfButton CssClass="e-primary" @onclick="OpenAddProduct">+ New Product</SfButton>
 </div>
+
+
+
+<SfDialog Visible="@isDialogOpen" Width="350px" ShowCloseIcon="true" Header="@dialogTitle" IsModal="true"
+          OnClose="CloseDialog">
+    <div class="p-2">
+        <div class="mb-2">
+            <label class="form-label">Product Name</label>
+            <input class="form-control" @bind="product.ProductName" />
+        </div>
+        <div class="mb-2">
+            <label class="form-label">Unit Price</label>
+            <input type="number" step="0.5" class="form-control" @bind="product.UnitPrice" />
+        </div>
+        <div class="mb-2">
+            <label class="form-label">Tax</label>
+            <input type ="number" step="0.5" class="form-control" min="1" @bind ="product.Tax" />
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+            <SfButton CssClass="e-outline" OnClick="CloseDialog">Cancel</SfButton>
+            <SfButton CssClass="e-primary" OnClick="SaveProduct">Save</SfButton>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="text-danger mt-2">@errorMessage</div>
+        }
+    </div>
+</SfDialog>
 
 <div class="mb-5">
     <SfGrid TIem="ProductModel" DataSource="products" AllowPaging="false" AllowSorting="true">
@@ -22,7 +53,6 @@
             <GridColumn Field="ProductName" HeaderText="Product Name" Width="250" />
             <GridColumn Field="UnitPrice" HeaderText="Unit Price" Format="N2" Width="250" />
             <GridColumn Field="Tax" HeaderText="Tax" Format="N2" Width="250" />
-        
         </GridColumns>
     </SfGrid>
 </div>
@@ -31,9 +61,12 @@
 
 @code {
     private List<ProductModel> products = new();
+    private ProductModel product = new ProductModel { ProductName = string.Empty, UnitPrice = 0, Tax = 15m };
     private bool isDialogOpen;
     private string dialogTitle = "";
     private string errorMessage = "";
+    private bool isEditMode;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -43,6 +76,49 @@
     private async Task LoadProductsAsync()
     {
         products = await ProductService.GetAllProductsAsync();
+    }
+
+    private void OpenAddProduct()
+    {
+        // isEditMode = false;
+        dialogTitle = "Add New Product";
+        product = new ProductModel { ProductName = string.Empty, UnitPrice = 0, Tax = 15m };
+        errorMessage = "";
+        isDialogOpen = true;
+    }
+
+    private void CloseDialog()
+    {
+        isDialogOpen = false;
+        errorMessage = "";
+    }
+
+    private async Task SaveProduct()
+    {
+        if (string.IsNullOrWhiteSpace(product.ProductName))
+        {
+            errorMessage = "product name is required.";
+            return;
+        }
+
+        try
+        {          
+            await ProductService.AddProductAsync(product);
+            isDialogOpen = false;
+            await LoadProductsAsync();
+        }
+        catch (ArgumentException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        catch
+        {
+            errorMessage = "An unexpected error occurred.";
+        }
     }
 
 }

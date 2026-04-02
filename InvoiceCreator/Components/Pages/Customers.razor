@@ -12,9 +12,11 @@
 
 @attribute [Authorize]
 
-<div class="py-2">
+<div class="d-flex justify-content-between py-2">
     <h2 class="fw-bold">Customer list</h2>
+    <SfButton CssClass="e-primary" @onclick="OpenAddCustomer">+ New Customer</SfButton>
 </div>
+
 
 <SfDialog Visible="@isDialogOpen" Width="350px" ShowCloseIcon="true" Header="@dialogTitle" IsModal="true"
           OnClose="CloseDialog">

@@ -30,7 +30,7 @@ namespace InvoiceCreator.Services
             _context = context;
         }
 
-        // 🔹 GET ALL
+        // get all
         public async Task<List<InvoiceMaster>> GetAllInvoiceMastersAsync()
         {
             return await _context.InvoiceMasters
@@ -48,16 +48,16 @@ namespace InvoiceCreator.Services
                 .ToListAsync();
         }
 
-        // 🔹 GET BY ID
+        // Get by id
         public async Task<InvoiceMaster?> GetInvoiceMasterByIdAsync(int id)
         {
             return await _context.InvoiceMasters
             .Include(i => i.InvoiceDetails)
             .ThenInclude(d => d.Product)
             .FirstOrDefaultAsync(i => i.InvoiceMasterId == id);
-                }
+        }
 
-        // ADD new invoice master
+        // Add new invoice master
         public async Task<InvoiceMaster> AddInvoiceMasterAsync(
             InvoiceMaster master,
             List<InvoiceDetail> details)
@@ -74,7 +74,7 @@ namespace InvoiceCreator.Services
             return master;
         }
 
-        // UPDATE existing invoice master
+        // Update existing invoice master
         public async Task UpdateInvoiceMasterAsync(
             InvoiceMaster master,
             List<InvoiceDetail> newDetails,
@@ -98,7 +98,7 @@ namespace InvoiceCreator.Services
                 existingMaster.CustomerName = master.CustomerName;
                 existingMaster.Status = master.Status;
 
-                // DELETE
+                // Delete
                 if (deletedDetails.Any())
                 {
                     var toDelete = await _context.InvoiceDetails
@@ -108,7 +108,7 @@ namespace InvoiceCreator.Services
                     _context.InvoiceDetails.RemoveRange(toDelete);
                 }
 
-                // UPDATE
+                // Update
                 foreach (var detail in updatedDetails)
                 {
                     var existingDetail = await _context.InvoiceDetails
@@ -123,7 +123,7 @@ namespace InvoiceCreator.Services
                     }
                 }
 
-                // INSERT
+                // Insert
                 if (newDetails.Any())
                 {
                     foreach (var detail in newDetails)
