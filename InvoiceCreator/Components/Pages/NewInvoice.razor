@@ -92,7 +92,13 @@
         </GridColumn>
 
         <!-- UNIT PRICE -->
-        <GridColumn Field="UnitPrice" HeaderText="Unit Price" Format="C2" AllowEditing="false" />
+        <GridColumn Field="UnitPrice" HeaderText="Unit Price" Format="C2">
+            <EditTemplate Context="row">
+                @{var item = (InvoiceDetailFormModel)row;}
+
+                <input class="form-control" value="@item.UnitPrice" readonly />
+            </EditTemplate>
+        </GridColumn>
 
         <!-- QUANTITY -->
         <GridColumn Field="Quantity" HeaderText="Quantity" EditType="EditType.NumericEdit" />
@@ -156,7 +162,7 @@
         currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     }
 
-    
+
     private void OnCustomerChanged(int id)
     {
         form.CustomerId = id;
@@ -186,34 +192,30 @@
         {
             row.ProductName = "No product";
         }
-        
+
         StateHasChanged();
-    }
-
-    // Notify syncfusion that the state has changed
-    private void OnToolbarClick(Syncfusion.Blazor.Navigations.ClickEventArgs args)
-    {
-        if (args.Item.Id == "Grid_add")
-        {
-            details.Add(new InvoiceDetailFormModel
-            {
-                Id = _nextId++,
-                Quantity = 1,
-                UnitPrice = 0,
-                Tax = 0
-            });
-
-            StateHasChanged();
-        }
     }
 
     private void OnActionComplete(ActionEventArgs<InvoiceDetailFormModel> args)
     {
-        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save ||
-            args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
+        var item = args.Data;
+
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            if (item != null)
+            {
+                var product = products.FirstOrDefault(p => p.ProductId == item.ProductId);
+                if (product != null)
+                {
+                    item.UnitPrice = product.UnitPrice;
+                }
+            }
+            details = details.ToList();
+            StateHasChanged();
+        } else if(args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
         {
             StateHasChanged();
-        }
+        }  
     }
 
     private async Task SaveInvoice()
@@ -231,6 +233,7 @@
             return new InvoiceDetail
             {
                 ProductId = product.ProductId,
+                UnitPrice = product.UnitPrice,
                 Quantity = d.Quantity,
                 NetAmount = net,
                 GrossAmount = gross
@@ -241,11 +244,9 @@
         {
             CustomerId = form.CustomerId,
             CustomerName = form.CustomerName,
-
             CreatedAt = DateTime.Now,
             CreatedById = currentUserId!,
             Status = InvoiceMasterStatus.Pending,
-
             NetAmount = invoiceDetails.Sum(d => d.NetAmount),
             GrossAmount = invoiceDetails.Sum(d => d.GrossAmount)
         };

@@ -93,6 +93,14 @@
 
         </GridColumn>
 
+        <!-- UNIT PRICE -->
+        <GridColumn Field="UnitPrice" HeaderText="Unit Price" Format="C2">
+            <EditTemplate Context="row">
+                @{var item = (InvoiceDetailFormModel)row;}
+                <input class="form-control" value="@item.UnitPrice" readonly />
+            </EditTemplate>
+        </GridColumn>
+
         <!-- QUANTITY -->
         <GridColumn Field="Quantity" HeaderText="Quantity" EditType="EditType.NumericEdit" />
 
@@ -178,7 +186,7 @@
             ProductId = d.ProductId,
             ProductName = d.Product?.ProductName ?? "",
             Quantity = d.Quantity,
-            UnitPrice = d.Product != null ? d.Product.UnitPrice : 0,
+            UnitPrice = d.UnitPrice,
             Tax = d.Product != null ? d.Product.Tax : 0
         }).ToList();
     }
@@ -213,23 +221,6 @@
         StateHasChanged();
     }
 
-    private void OnToolbarClick(Syncfusion.Blazor.Navigations.ClickEventArgs args)
-    {
-        if (args.Item.Id == "Grid_add")
-        {
-            var newItem = new InvoiceDetailFormModel
-            {
-                Id = 0,
-                Quantity = 1
-            };
-
-            details.Add(newItem);
-            newDetails.Add(newItem);
-
-            StateHasChanged();
-        }
-    }
-
     private void OnActionComplete(ActionEventArgs<InvoiceDetailFormModel> args)
     {
         var item = args.Data;
@@ -247,6 +238,12 @@
                 if (!updatedDetails.Contains(item))
                     updatedDetails.Add(item);
             }
+            var product = products.FirstOrDefault(p => p.ProductId == item.ProductId);
+            if (product != null)
+            {
+                item.UnitPrice = product.UnitPrice;
+                details = details.ToList();
+            }
         }
 
         if (args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
@@ -258,7 +255,7 @@
             updatedDetails.Remove(item);
             details.Remove(item);
         }
-
+        
         StateHasChanged();
     }
 
@@ -277,6 +274,7 @@
             return new InvoiceDetail
             {
                 ProductId = d.ProductId,
+                UnitPrice = product.UnitPrice,
                 Quantity = d.Quantity,
                 NetAmount = net,
                 GrossAmount = gross
@@ -295,6 +293,7 @@
             {
                 InvoiceDetailId = d.Id,
                 ProductId = d.ProductId,
+                UnitPrice = product.UnitPrice,
                 Quantity = d.Quantity,
                 NetAmount = net,
                 GrossAmount = gross
@@ -314,7 +313,6 @@
             return netLine * (1 + product.Tax / 100m);
         });
 
-        Console.WriteLine($"before: Net: {net}, Gross: {gross}");
 
         var invoiceMaster = new InvoiceMaster
         {
@@ -324,7 +322,6 @@
             Status = form.Status,
             CreatedAt = DateTime.Now,
             CreatedById = currentUserId,
-
             NetAmount = net,
             GrossAmount = gross
         };

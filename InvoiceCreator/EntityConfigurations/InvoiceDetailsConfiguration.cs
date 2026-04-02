@@ -11,6 +11,7 @@ public class InvoiceDetailsConfiguration : IEntityTypeConfiguration<InvoiceDetai
         builder.Property(i => i.Quantity).IsRequired().HasDefaultValue(1);
         builder.Property(i => i.GrossAmount).HasPrecision(12, 2);
         builder.Property(i => i.NetAmount).HasPrecision(12, 2);
+        builder.Property(i => i.UnitPrice).HasPrecision(12, 2);
         builder
         .HasOne(i => i.InvoiceMaster)
         .WithMany(i => i.InvoiceDetails)
