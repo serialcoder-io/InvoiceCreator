@@ -3,7 +3,7 @@
 
 @using CustomerModel = InvoiceCreator.Models.Customer
 @using Microsoft.AspNetCore.Authorization
-
+@inject NavigationManager NavManager
 @inject InvoiceCreator.Services.ICustomerService CustomerService
 
 @attribute [Authorize]
@@ -34,16 +34,25 @@
 </SfDialog>
 
 <div class="mb-5">
-    <SfGrid DataSource="customers" AllowPaging="false" AllowSorting="true">
+    <SfGrid TValue="CustomerModel" DataSource="customers" AllowPaging="false" AllowSorting="true">
         <GridColumns>
             <GridColumn Field="CustomerId" Visible="false" HeaderText="ID" Width="80" TextAlign="TextAlign.Center" />
             <GridColumn Field="CustomerName" HeaderText="Customer Name" Width="250" />
             <GridColumn HeaderText="Actions" Width="120" AllowSorting="false" AllowFiltering="false"
                         TextAlign="TextAlign.Center">
-                <Template>
-                    <button class="btn btn-sm btn-warning" title="Edit"
-                            @onclick="() => EditCustomer((CustomerModel)context)">
+                <Template Context="context">
+                    @{
+                        var customer = (CustomerModel)context;
+                    }
+
+                    <button class="btn btn-sm btn-secondary"
+                            @onclick="() => EditCustomer(customer)">
                         Edit
+                    </button>
+
+                    <button class="btn btn-sm btn-primary"
+                            @onclick="() => SelectCustomer(customer.CustomerId)">
+                        + New invoice
                     </button>
                 </Template>
             </GridColumn>
@@ -132,4 +141,11 @@
         isDialogOpen = false;
         errorMessage = "";
     }
+
+    private void SelectCustomer(int customerId)
+    {
+
+        NavManager.NavigateTo($"/invoices/add?customer_id={customerId}");
+    }
+
 }

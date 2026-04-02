@@ -155,6 +155,9 @@
     private List<InvoiceDetailFormModel> details = new();
     private string? currentUserId = null;
     private bool showCustomerDialog = false;
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int? customer_id { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -164,8 +167,18 @@
         var user = authState.User;
 
         currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    }
 
+        if (customer_id.HasValue)
+        {
+            var customer = customers.FirstOrDefault(c => c.CustomerId == customer_id.Value);
+
+            if (customer != null)
+            {
+                form.CustomerId = customer.CustomerId;
+                form.CustomerName = customer.CustomerName;
+            }
+        }
+    }
 
     private void OnCustomerChanged(int id)
     {
