@@ -91,30 +91,49 @@
             </EditTemplate>
         </GridColumn>
 
+        <!-- UNIT PRICE -->
+        <GridColumn Field="UnitPrice" HeaderText="Unit Price" Format="C2" AllowEditing="false" />
+
         <!-- QUANTITY -->
         <GridColumn Field="Quantity" HeaderText="Quantity" EditType="EditType.NumericEdit" />
 
         <!-- NET -->
-        <GridColumn HeaderText="Net Amount">
-            <Template Context="row">
-                @{
-                    var item = (InvoiceDetailFormModel)row;
-                }
-                @(item.Quantity * item.UnitPrice)
-            </Template>
-        </GridColumn>
+        <GridColumn Field="NetAmount" HeaderText="Net Amount" Format="C2" />
 
         <!-- GROSS -->
-        <GridColumn HeaderText="Gross Amount">
-            <Template Context="row">
-                @{
-                    var item = (InvoiceDetailFormModel)row;
-                }
-                @(item.Quantity * item.UnitPrice * (1 + item.Tax / 100))
-            </Template>
-        </GridColumn>
+        <GridColumn Field="GrossAmount" HeaderText="Gross Amount" Format="C2" />
 
     </GridColumns>
+
+    <GridAggregates>
+        <GridAggregate>
+            <GridAggregateColumns>
+                <GridAggregateColumn Field="NetAmount" Type="AggregateType.Sum">
+                    <FooterTemplate>
+                        @{
+                            var aggregateContext = context as AggregateTemplateContext;
+                            var totalGross = aggregateContext != null ? Convert.ToDecimal(aggregateContext.Sum) : 0m;
+                        }
+                        <div class="fw-bold">
+                            <div>Rs @totalGross.ToString()</div>
+                        </div>
+                    </FooterTemplate>
+                </GridAggregateColumn>
+
+                <GridAggregateColumn Field="GrossAmount" Type="AggregateType.Sum">
+                    <FooterTemplate>
+                        @{
+                            var aggregateContext = context as AggregateTemplateContext;
+                            var totalGross = aggregateContext != null ? Convert.ToDecimal(aggregateContext.Sum) : 0m;
+                        }
+                        <div class="fw-bold">
+                            <div>Rs @totalGross.ToString()</div>
+                        </div>
+                    </FooterTemplate>
+                </GridAggregateColumn>
+            </GridAggregateColumns>
+        </GridAggregate>
+    </GridAggregates>
 </SfGrid>
 
 @code {

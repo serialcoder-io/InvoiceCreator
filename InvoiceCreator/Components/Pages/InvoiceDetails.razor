@@ -4,6 +4,7 @@
 @using InvoiceCreator.Models
 @using InvoiceCreator.Services
 @using Microsoft.AspNetCore.Authorization
+@using System.Globalization
 
 @inject IInvoiceMasterService InvoiceMasterService
 @inject NavigationManager NavManager
@@ -21,7 +22,7 @@
 }
 else
 {
-    <!-- 🔹 INFOS FACTURE -->
+    <!-- invoice master infos -->
     <div class="card p-3 mb-3">
         <div class="row">
             <div class="col-md-6">
@@ -29,24 +30,13 @@ else
             </div>
 
             <div class="col-md-6">
-                <strong>Created At:</strong> @invoice.CreatedAt.ToString("yyyy-MM-dd")
+                <strong>Created At:</strong> @invoice.CreatedAt.ToString("f", new CultureInfo("en-MU"))
             </div>
         </div>
-
         <hr />
-
-        <div class="row">
-            <div class="col-md-6">
-                <strong>Net Amount:</strong> @invoice.NetAmount
-            </div>
-
-            <div class="col-md-6">
-                <strong>Gross Amount:</strong> @invoice.GrossAmount
-            </div>
-        </div>
     </div>
 
-    <!-- 🔹 DETAILS (GRID READ-ONLY) -->
+    <!-- details -->
     <SfGrid DataSource="@invoice.InvoiceDetails"
             TValue="InvoiceDetail"
             AllowEditing="false"
@@ -54,25 +44,42 @@ else
             AllowDeleting="false">
 
         <GridColumns>
-
-            <GridColumn Field="InvoiceDetailId"
-                        HeaderText="ID"
-                        IsPrimaryKey="true"
-                        Visible="false" />
-
-            <GridColumn Field="Product.ProductName"
-                        HeaderText="Product" />
-
-            <GridColumn Field="Quantity"
-                        HeaderText="Quantity" />
-
-            <GridColumn Field="NetAmount"
-                        HeaderText="Net" />
-
-            <GridColumn Field="GrossAmount"
-                        HeaderText="Gross" />
-
+            <GridColumn Field="InvoiceDetailId" HeaderText="ID" IsPrimaryKey="true" Visible="false" />
+            <GridColumn Field="Product.ProductName" HeaderText="Product" />
+            <GridColumn Field="Quantity" HeaderText="Quantity" />
+            <GridColumn Field="NetAmount" HeaderText="Net" />
+            <GridColumn Field="GrossAmount" HeaderText="Gross" />
         </GridColumns>
+
+        <GridAggregates>
+            <GridAggregate>
+                <GridAggregateColumns>
+                    <GridAggregateColumn Field="NetAmount" Type="AggregateType.Sum">
+                        <FooterTemplate>
+                            @{
+                                var aggregateContext = context as AggregateTemplateContext;
+                                var totalGross = aggregateContext != null ? Convert.ToDecimal(aggregateContext.Sum) : 0m;
+                            }
+                            <div class="fw-bold">
+                                <div>Rs @totalGross.ToString()</div>
+                            </div>
+                        </FooterTemplate>
+                    </GridAggregateColumn>
+
+                    <GridAggregateColumn Field="GrossAmount" Type="AggregateType.Sum">
+                        <FooterTemplate>
+                            @{
+                                var aggregateContext = context as AggregateTemplateContext;
+                                var totalGross = aggregateContext != null ? Convert.ToDecimal(aggregateContext.Sum) : 0m;
+                            }
+                            <div class="fw-bold">
+                                <div>Rs @totalGross.ToString()</div>
+                            </div>
+                        </FooterTemplate>
+                    </GridAggregateColumn>
+                </GridAggregateColumns>
+            </GridAggregate>
+        </GridAggregates>
 
     </SfGrid>
 }
