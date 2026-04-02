@@ -220,7 +220,7 @@
         if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
         {
             // if the new line doesn't existe in the db
-            if ( && item.Id == 0)
+            if (item.Id == 0)
             {
                 if (!newDetails.Contains(item))
                     newDetails.Add(item);
