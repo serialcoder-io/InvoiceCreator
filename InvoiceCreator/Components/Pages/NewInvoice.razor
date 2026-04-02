@@ -5,7 +5,7 @@
 @using InvoiceCreator.Models
 @using InvoiceCreator.Services
 @using Microsoft.AspNetCore.Authorization
-@using Syncfusion.Blazor.Buttons
+@using InvoiceCreator.Components.Shared
 @inject NavigationManager NavManager
 
 @inject ICustomerService CustomerService
@@ -19,6 +19,11 @@
     <h2 class="fw-bold">New Invoice</h2>
     <SfButton CssClass="e-primary" @onclick="SaveInvoice">Save</SfButton>
 </div>
+
+<CustomDialog Title="Customer Required"
+              Message="Please select a customer before saving the invoice."
+              IsVisible="@showCustomerDialog"
+              IsVisibleChanged="@((bool val) => showCustomerDialog = val)" />
 
 <!-- CUSTOMER -->
 <div class="d-flex flex-column pb-2">
@@ -149,8 +154,7 @@
     private List<Product> products = new();
     private List<InvoiceDetailFormModel> details = new();
     private string? currentUserId = null;
-
-    private int _nextId = 1;
+    private bool showCustomerDialog = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -222,6 +226,12 @@
     {
         if (string.IsNullOrEmpty(currentUserId))
             throw new Exception("User not authenticated");
+
+        if (form.CustomerId == 0)
+        {
+            showCustomerDialog = true;
+            return;
+        }
 
         var invoiceDetails = details.Select(d =>
         {
