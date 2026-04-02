@@ -6,10 +6,14 @@
 @using Microsoft.AspNetCore.Authorization
 
 @inject IInvoiceMasterService InvoiceMasterService
+@inject NavigationManager NavManager
 
 @attribute [Authorize]
 
-<h3 class="mb-3">Invoice Details #@id</h3>
+<div class="d-flex justify-content-between py-2">
+    <h3 class="mb-3">Invoice Details</h3>
+    <button class="btn btn-primary btn-sm py-2" @onclick="GoToEdit">Edit</button>
+</div>
 
 @if (invoice == null)
 {
@@ -84,4 +88,6 @@ else
     {
         invoice = await InvoiceMasterService.GetInvoiceMasterByIdAsync(id);
     }
+
+    private void GoToEdit() => NavManager.NavigateTo($"/invoices/edit/{id}");
 }

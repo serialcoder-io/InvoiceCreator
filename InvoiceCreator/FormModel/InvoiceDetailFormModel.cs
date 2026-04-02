@@ -24,5 +24,9 @@ namespace InvoiceCreator.FormModel
         public decimal UnitPrice { get; set; }
 
         public decimal Tax { get; set; }
+        public decimal NetAmount => Quantity * UnitPrice;
+
+        public decimal GrossAmount => Quantity * UnitPrice * (1 + Tax / 100m);
+
     }
 }

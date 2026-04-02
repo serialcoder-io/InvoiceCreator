@@ -16,7 +16,7 @@
 @attribute [Authorize]
 
 <div class="d-flex justify-content-between py-2">
-    <h2 class="fw-bold">Edit Invoice #@id</h2>
+    <h2 class="fw-bold">Edit Invoice</h2>
     <SfButton CssClass="e-primary" @onclick="SaveInvoice">Save</SfButton>
 </div>
 
@@ -48,15 +48,15 @@
 <!-- GRID -->
 <SfGrid DataSource="@details"
         TValue="InvoiceDetailFormModel"
-        Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })"
+        Toolbar="@toolbarItems"
         AllowEditing="true"
         ToolbarClick="OnToolbarClick">
 
-    <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"
-                      Mode="Syncfusion.Blazor.Grids.EditMode.Normal" />
+    <GridEditSettings 
+        AllowAdding="true" AllowEditing="true" AllowDeleting="true"
+        Mode="Syncfusion.Blazor.Grids.EditMode.Normal" />
 
-    <GridEvents TValue="InvoiceDetailFormModel"
-                OnActionComplete="OnActionComplete" />
+    <GridEvents TValue="InvoiceDetailFormModel" OnActionComplete="OnActionComplete" />
 
     <GridColumns>
 
@@ -67,7 +67,7 @@
         <GridColumn Field="ProductId" HeaderText="Product">
 
             <Template Context="row">
-                @((row as InvoiceDetailFormModel).ProductName)
+                @((row as InvoiceDetailFormModel)!.ProductName)
             </Template>
 
             <EditTemplate Context="row">
@@ -97,26 +97,42 @@
         <GridColumn Field="Quantity" HeaderText="Quantity" EditType="EditType.NumericEdit" />
 
         <!-- NET -->
-        <GridColumn HeaderText="Net Amount">
-            <Template Context="row">
-                @{
-                    var item = (InvoiceDetailFormModel)row;
-                }
-                @(item.Quantity* item.UnitPrice)
-            </Template>
-        </GridColumn>
+        <GridColumn Field="NetAmount" HeaderText="Net Amount" Format="C2" />
 
         <!-- GROSS -->
-        <GridColumn HeaderText="Gross Amount">
-            <Template Context="row">
-                @{
-                    var item = (InvoiceDetailFormModel)row;
-                }
-                @(item.Quantity* item.UnitPrice * (1 + item.Tax / 100m))
-            </Template>
-        </GridColumn>
+        <GridColumn Field="GrossAmount" HeaderText="Gross Amount" Format="C2" />
 
     </GridColumns>
+
+    <GridAggregates>
+        <GridAggregate>
+            <GridAggregateColumns>
+                <GridAggregateColumn Field="NetAmount" Type="AggregateType.Sum">
+                    <FooterTemplate>
+                        @{
+                            var aggregateContext = context as AggregateTemplateContext;
+                            var totalGross = aggregateContext != null ? Convert.ToDecimal(aggregateContext.Sum) : 0m;
+                        }
+                        <div class="fw-bold text-end d-flex flex-column align-items-end">
+                            <div>Total Net: @totalGross.ToString("C2")</div>
+                        </div>
+                    </FooterTemplate>
+                </GridAggregateColumn>
+
+                <GridAggregateColumn Field="GrossAmount" Type="AggregateType.Sum">
+                    <FooterTemplate>
+                        @{
+                            var aggregateContext = context as AggregateTemplateContext;
+                            var totalGross = aggregateContext != null ? Convert.ToDecimal(aggregateContext.Sum) : 0m;
+                        }
+                        <div class="fw-bold text-end d-flex flex-column align-items-end">
+                            <div>Total Gross: @totalGross.ToString("C2")</div>
+                        </div>
+                    </FooterTemplate>
+                </GridAggregateColumn>
+            </GridAggregateColumns>
+        </GridAggregate>
+    </GridAggregates>
 </SfGrid>
 
 @code {
@@ -134,6 +150,7 @@
     private List<InvoiceDetailFormModel> newDetails = new();
     private List<InvoiceDetailFormModel> updatedDetails = new();
     private List<int> deletedDetails = new();
+    List<string> toolbarItems = new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" };
 
     private string? currentUserId;
 
@@ -283,22 +300,21 @@
                 GrossAmount = gross
             };
         }).ToList();
-        
 
-        var allDetails = details.ToList();
-
-        var net = allDetails.Sum(d =>
+        var net = details.Sum(d =>
         {
             var product = products.First(p => p.ProductId == d.ProductId);
             return product.UnitPrice * d.Quantity;
         });
 
-        var gross = allDetails.Sum(d =>
+        var gross = details.Sum(d =>
         {
             var product = products.First(p => p.ProductId == d.ProductId);
             var netLine = product.UnitPrice * d.Quantity;
             return netLine * (1 + product.Tax / 100m);
         });
+
+        Console.WriteLine($"before: Net: {net}, Gross: {gross}");
 
         var invoiceMaster = new InvoiceMaster
         {
@@ -313,36 +329,13 @@
             GrossAmount = gross
         };
 
+
         await InvoiceMasterService.UpdateInvoiceMasterAsync(
             invoiceMaster,
             newEntities,
             updatedEntities,
             deletedDetails
         );
-
-        // Recharger depuis la base
-        var invoiceFromDb = await InvoiceMasterService.GetInvoiceMasterByIdAsync(id);
-
-        net = invoiceFromDb.InvoiceDetails.Sum(d =>
-            d.Product.UnitPrice * d.Quantity
-        );
-
-        gross = invoiceFromDb.InvoiceDetails.Sum(d =>
-        {
-            var netLine = d.Product.UnitPrice * d.Quantity;
-            return netLine * (1 + d.Product.Tax / 100m);
-        });
-
-        // Update net and gross amounts
-        invoiceFromDb.NetAmount = net;
-        invoiceFromDb.GrossAmount = gross;
-
-        await InvoiceMasterService.UpdateInvoiceMasterAsync(
-            invoiceFromDb,
-            new List<InvoiceDetail>(),
-            new List<InvoiceDetail>(),
-            new List<int>()
-         );
         NavManager.NavigateTo($"/invoices/{id}");
     }
 }

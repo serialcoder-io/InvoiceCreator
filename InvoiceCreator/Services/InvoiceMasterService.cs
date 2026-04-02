@@ -97,9 +97,11 @@ namespace InvoiceCreator.Services
                 existingMaster.CustomerId = master.CustomerId;
                 existingMaster.CustomerName = master.CustomerName;
                 existingMaster.Status = master.Status;
+                existingMaster.NetAmount = master.NetAmount;
+                existingMaster.GrossAmount = master.GrossAmount;
 
                 // Delete
-                if (deletedDetails.Any())
+                if (deletedDetails.Count != 0)
                 {
                     var toDelete = await _context.InvoiceDetails
                         .Where(d => deletedDetails.Contains(d.InvoiceDetailId))
@@ -124,7 +126,7 @@ namespace InvoiceCreator.Services
                 }
 
                 // Insert
-                if (newDetails.Any())
+                if (newDetails.Count != 0)
                 {
                     foreach (var detail in newDetails)
                     {
@@ -133,14 +135,6 @@ namespace InvoiceCreator.Services
 
                     await _context.InvoiceDetails.AddRangeAsync(newDetails);
                 }
-
-                // Compute amounts
-                var allDetails = await _context.InvoiceDetails
-                    .Where(d => d.InvoiceMasterId == existingMaster.InvoiceMasterId)
-                    .ToListAsync();
-
-                existingMaster.NetAmount = allDetails.Sum(d => d.NetAmount);
-                existingMaster.GrossAmount = allDetails.Sum(d => d.GrossAmount);
 
                 // Save
                 await _context.SaveChangesAsync();
