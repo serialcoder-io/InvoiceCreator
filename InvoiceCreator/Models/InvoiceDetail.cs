@@ -16,9 +16,9 @@
 
         public required int Quantity { get; set; } = 1;
 
-        public decimal GrossAmount { get; set; } // total price (with tax)
+        public decimal GrossAmount { get; set; } // total price (tax excluded)
 
-        public required decimal NetAmount { get; set; } // total price (tax excluded)
+        public required decimal NetAmount { get; set; } // total price (with tax)
     }
 }
 

@@ -19,9 +19,9 @@ namespace InvoiceCreator.Models
 
         public Customer? Customer { get; set; }
 
-        public decimal GrossAmount { get; set; } // price (with tax)
+        public decimal GrossAmount { get; set; } // price (taxe excluded)
 
-        public decimal NetAmount { get; set; } // price (tax exluded)
+        public decimal NetAmount { get; set; } // price (with tax)
 
         public DateTime CreatedAt { get; set; }
 

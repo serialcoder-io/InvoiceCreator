@@ -29,8 +29,8 @@ namespace InvoiceCreator.Services
             if (product == null)
                 throw new Exception("Product not found");
 
-            var net = product.UnitPrice * detail.Quantity;
-            var gross = net * (1 + product.Tax / 100m);
+            var gross = product.UnitPrice * detail.Quantity;
+            var net = gross * (1 + product.Tax / 100m);
 
             detail.NetAmount = net;
             detail.GrossAmount = gross;
