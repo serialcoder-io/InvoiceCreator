@@ -1,4 +1,4 @@
-﻿@page "/invoices/edit/{id:int}"
+﻿@page "/invoices/edit/{id}"
 @rendermode InteractiveServer
 
 @using InvoiceCreator.FormModel
@@ -152,7 +152,7 @@
 @code {
 
     [Parameter]
-    public int id { get; set; }
+    public required string id { get; set; }
 
     private InvoiceMasterFormModel form = new();
 

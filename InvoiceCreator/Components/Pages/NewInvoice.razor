@@ -274,9 +274,9 @@
             GrossAmount = invoiceDetails.Sum(d => d.GrossAmount)
         };
 
-        var saved = await InvoiceMasterService.AddInvoiceMasterAsync(invoiceMaster, invoiceDetails);
+        var newInvoiceMasterId = await InvoiceMasterService.AddInvoiceMasterAsync(invoiceMaster, invoiceDetails);
 
-        NavManager.NavigateTo($"/invoices/{saved.InvoiceMasterId}");
+        NavManager.NavigateTo($"/invoices/{newInvoiceMasterId}");
         
     }
 }

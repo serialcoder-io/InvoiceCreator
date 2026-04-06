@@ -1,5 +1,6 @@
 ﻿using InvoiceCreator.Data;
 using InvoiceCreator.Models;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace InvoiceCreator.Services
@@ -7,11 +8,12 @@ namespace InvoiceCreator.Services
     public interface IInvoiceMasterService
     {
         Task<List<InvoiceMaster>> GetAllInvoiceMastersAsync();
-        Task<InvoiceMaster?> GetInvoiceMasterByIdAsync(int id);
+        Task<InvoiceMaster?> GetInvoiceMasterByIdAsync(string id);
 
-        Task<InvoiceMaster> AddInvoiceMasterAsync(
+        Task<string> AddInvoiceMasterAsync(
             InvoiceMaster master,
-            List<InvoiceDetail> details);
+            List<InvoiceDetail> details
+        );
 
         Task UpdateInvoiceMasterAsync(
             InvoiceMaster master,
@@ -49,7 +51,7 @@ namespace InvoiceCreator.Services
         }
 
         // Get by id
-        public async Task<InvoiceMaster?> GetInvoiceMasterByIdAsync(int id)
+        public async Task<InvoiceMaster?> GetInvoiceMasterByIdAsync(string id)
         {
             return await _context.InvoiceMasters
             .Include(i => i.InvoiceDetails)
@@ -58,20 +60,56 @@ namespace InvoiceCreator.Services
         }
 
         // Add new invoice master
-        public async Task<InvoiceMaster> AddInvoiceMasterAsync(
+        public async Task<string> AddInvoiceMasterAsync(
             InvoiceMaster master,
             List<InvoiceDetail> details)
         {
-            master.InvoiceDetails = details;
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            master.NetAmount = details.Sum(d => d.NetAmount);
-            master.GrossAmount = details.Sum(d => d.GrossAmount);
+            try
+            {
+                master.NetAmount = details.Sum(d => d.NetAmount);
+                master.GrossAmount = details.Sum(d => d.GrossAmount);
 
-            _context.InvoiceMasters.Add(master);
+                var invoiceIdParam = new SqlParameter
+                {
+                    ParameterName = "@InvoiceID",
+                    SqlDbType = System.Data.SqlDbType.VarChar,
+                    Size = 50,
+                    Direction = System.Data.ParameterDirection.Output
+                };
 
-            await _context.SaveChangesAsync();
+                await _context.Database.ExecuteSqlRawAsync(
+                    "EXEC sp_CreateNewInvoiceMaster @CustomerID, @CustomerName, @CreatedAt, @CreatedBy, @Status, @NetAmount, @GrossAmount, @InvoiceID OUTPUT",
+                    new SqlParameter("@CustomerID", master.CustomerId),
+                    new SqlParameter("@CustomerName", master.CustomerName),
+                    new SqlParameter("@CreatedAt", master.CreatedAt),
+                    new SqlParameter("@CreatedBy", master.CreatedById),
+                    new SqlParameter("@Status", master.Status.ToString()),
+                    new SqlParameter("@NetAmount", master.NetAmount),
+                    new SqlParameter("@GrossAmount", master.GrossAmount),
+                    invoiceIdParam
+                );
 
-            return master;
+                var generatedId = invoiceIdParam.Value.ToString() ?? throw new Exception("Invoice ID generation failed");
+
+                foreach (var detail in details)
+                {
+                    detail.InvoiceMasterId = generatedId;
+                }
+
+                _context.InvoiceDetails.AddRange(details);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                return generatedId;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         // Update existing invoice master
@@ -130,7 +168,7 @@ namespace InvoiceCreator.Services
                 {
                     foreach (var detail in newDetails)
                     {
-                        detail.InvoiceMasterId = existingMaster.InvoiceMasterId;
+                        detail.InvoiceMasterId = existingMaster.InvoiceMasterId!;
                     }
 
                     await _context.InvoiceDetails.AddRangeAsync(newDetails);

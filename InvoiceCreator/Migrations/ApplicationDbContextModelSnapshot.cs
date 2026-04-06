@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace InvoiceCreator.Data.Migrations
+namespace InvoiceCreator.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
@@ -117,8 +117,9 @@ namespace InvoiceCreator.Data.Migrations
                         .HasPrecision(12, 2)
                         .HasColumnType("decimal(12,2)");
 
-                    b.Property<int>("InvoiceMasterId")
-                        .HasColumnType("int");
+                    b.Property<string>("InvoiceMasterId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("NetAmount")
                         .HasPrecision(12, 2)
@@ -146,13 +147,24 @@ namespace InvoiceCreator.Data.Migrations
                     b.ToTable("InvoiceDetails");
                 });
 
-            modelBuilder.Entity("InvoiceCreator.Models.InvoiceMaster", b =>
+            modelBuilder.Entity("InvoiceCreator.Models.InvoiceDetailCounter", b =>
                 {
-                    b.Property<int>("InvoiceMasterId")
-                        .ValueGeneratedOnAdd()
+                    b.Property<string>("Code")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("LastNumber")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("InvoiceMasterId"));
+                    b.HasKey("Code");
+
+                    b.ToTable("InvoiceDetailCounter");
+                });
+
+            modelBuilder.Entity("InvoiceCreator.Models.InvoiceMaster", b =>
+                {
+                    b.Property<string>("InvoiceMasterId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -189,6 +201,19 @@ namespace InvoiceCreator.Data.Migrations
                     b.HasIndex("CustomerName");
 
                     b.ToTable("InvoiceMasters");
+                });
+
+            modelBuilder.Entity("InvoiceCreator.Models.InvoiceMasterCounter", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("LastNumber")
+                        .HasColumnType("int");
+
+                    b.HasKey("Code");
+
+                    b.ToTable("InvoiceMasterCounter");
                 });
 
             modelBuilder.Entity("InvoiceCreator.Models.Product", b =>

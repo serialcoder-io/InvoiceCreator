@@ -11,7 +11,7 @@ namespace InvoiceCreator.Models
 
     public class InvoiceMaster
     {
-        public int InvoiceMasterId { get; set; }
+        public string? InvoiceMasterId { get; set; }
 
         public required string CustomerName { get; set; }
 
@@ -19,9 +19,9 @@ namespace InvoiceCreator.Models
 
         public Customer? Customer { get; set; }
 
-        public decimal GrossAmount { get; set; } // price (taxe excluded)
+        public decimal GrossAmount { get; set; } // price (with tax)
 
-        public decimal NetAmount { get; set; } // price (with tax)
+        public decimal NetAmount { get; set; } // price (with excluded)
 
         public DateTime CreatedAt { get; set; }
 

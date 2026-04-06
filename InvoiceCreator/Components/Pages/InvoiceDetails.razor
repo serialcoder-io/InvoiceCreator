@@ -1,4 +1,4 @@
-﻿@page "/invoices/{id:int}"
+﻿@page "/invoices/{id}"
 @rendermode InteractiveServer
 
 @using InvoiceCreator.Models
@@ -12,7 +12,7 @@
 @attribute [Authorize]
 
 <div class="d-flex justify-content-between py-2">
-    <h3 class="mb-3">Invoice Details</h3>
+    <h3 class="mb-3">Invoice @id</h3>
     <button class="btn btn-primary btn-sm py-2" @onclick="GoToEdit">Edit</button>
 </div>
 
@@ -88,7 +88,7 @@ else
 @code {
 
     [Parameter]
-    public int id { get; set; }
+    public required string id { get; set; }
 
     private InvoiceMaster? invoice;
 

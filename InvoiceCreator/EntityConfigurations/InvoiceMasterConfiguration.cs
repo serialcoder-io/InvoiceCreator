@@ -7,6 +7,7 @@ public class InvoiceMasterConfiguration : IEntityTypeConfiguration<InvoiceMaster
     public void Configure(EntityTypeBuilder<InvoiceMaster> builder)
     {
         builder.HasKey(i => i.InvoiceMasterId);
+        builder.Property(i => i.InvoiceMasterId).ValueGeneratedOnAdd();
         builder.Property(i => i.CustomerName).IsRequired();
         builder.HasIndex(i => i.CustomerName);
         builder.Property(i => i.GrossAmount).HasPrecision(12, 2);

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Syncfusion.Blazor;
-
+// aspnet-InvoiceCreator-a77ddb17-4b76-42f9-93a9-74df61c91e35
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.

@@ -31,7 +31,7 @@ else
     <div class="pb-5">
         <SfGrid DataSource="@invoices" AllowSorting="true">
             <GridColumns>
-                <GridColumn Field="InvoiceMasterId" Visible="false" HeaderText="ID" />
+                <GridColumn Field="InvoiceMasterId" HeaderText="ID" />
                 <GridColumn Field="CustomerName" HeaderText="Product Name" />
                 <GridColumn Field="GrossAmount" HeaderText="Gross Amount" Format="N2" />
                 <GridColumn Field="NetAmount" HeaderText="NetA Amount" Format="N2" />
@@ -58,11 +58,11 @@ else
                         @{
                             var item = (InvoiceMasterModel)d;
                         }
-                        <button class="btn btn-sm btn-primary" @onclick="()=> GoToDetails(item.InvoiceMasterId)">
+                        <button class="btn btn-sm btn-primary" @onclick="()=> GoToDetails(item.InvoiceMasterId!)">
                             Details
                         </button>
 
-                        <button class="btn btn-sm btn-secondary" @onclick="() => GoToEdit(item.InvoiceMasterId)">
+                        <button class="btn btn-sm btn-secondary" @onclick="() => GoToEdit(item.InvoiceMasterId!)">
                             Edit
                         </button>
                     </Template>
@@ -87,13 +87,13 @@ else
         NavManager.NavigateTo($"/invoices/add");
     }
 
-    void GoToEdit(int id)
+    void GoToEdit(string id)
     {
         NavManager.NavigateTo($"/invoices/edit/{id}");
     }
 
 
-    void GoToDetails(int id)
+    void GoToDetails(string id)
     {
         NavManager.NavigateTo($"/invoices/{id}");
     }

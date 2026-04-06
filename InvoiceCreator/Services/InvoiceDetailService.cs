@@ -7,7 +7,7 @@ namespace InvoiceCreator.Services
     public interface IInvoiceDetailService
     {
         Task<InvoiceDetail> AddInvoiceDetailAsync(InvoiceDetail detail);
-        Task<List<InvoiceDetail>> GetByInvoiceIdAsync(int invoiceMasterId);
+        Task<List<InvoiceDetail>> GetByInvoiceIdAsync(string invoiceMasterId);
     }
 
     public class InvoiceDetailService : IInvoiceDetailService
@@ -42,7 +42,7 @@ namespace InvoiceCreator.Services
             return detail;
         }
 
-        public async Task<List<InvoiceDetail>> GetByInvoiceIdAsync(int invoiceMasterId)
+        public async Task<List<InvoiceDetail>> GetByInvoiceIdAsync(string invoiceMasterId)
         {
             return await _context.InvoiceDetails
                 .Where(d => d.InvoiceMasterId == invoiceMasterId)
