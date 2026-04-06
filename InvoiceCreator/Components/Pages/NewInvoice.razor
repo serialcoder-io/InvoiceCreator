@@ -43,9 +43,7 @@
 
 <div class="d-flex flex-column">
     <label>Customer Name</label>
-    <input class="form-control"
-           value="@form.CustomerName"
-           readonly />
+    <input class="form-control" value="@form.CustomerName" readonly />
 </div>
 
 <hr />
@@ -56,7 +54,7 @@
         AllowEditing="true">
 
     <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"
-                      Mode="Syncfusion.Blazor.Grids.EditMode.Normal" />
+                      Mode="Syncfusion.Blazor.Grids.EditMode.Batch" />
 
     <GridEvents TValue="InvoiceDetailFormModel" OnActionComplete="OnActionComplete" />
 
@@ -69,39 +67,34 @@
         <GridColumn Field="ProductId" HeaderText="Product">
             <Template Context="row">
                 @{
-                    var item = (InvoiceDetailFormModel)row;
+                    var item = row as InvoiceDetailFormModel;
                 }
 
-                @item.ProductName
+                @item?.ProductName
             </Template>
 
             <EditTemplate Context="row">
                 @{
-                    var item = (InvoiceDetailFormModel)row;
+                    var item = row as InvoiceDetailFormModel;
                 }
 
-                <InputSelect TValue="int"
-                             class="form-select"
-                             Value="@item.ProductId"
-                             ValueChanged="@( (int val) => OnProductChanged(val, item) )"
-                             ValueExpression="() => item.ProductId">
+                <SfDropDownList TValue="int" TItem="Product"
+                                DataSource="@products"
+                                Value="@item.ProductId"
+                                ValueChanged="@( (int val) => OnProductChanged(val, item) )">
 
-                    <option value="0">-- Product --</option>
-
-                    @foreach (var p in products)
-                    {
-                        <option value="@p.ProductId">@p.ProductName</option>
-                    }
-                </InputSelect>
+                    <DropDownListFieldSettings Value="ProductId" Text="ProductName" />
+                </SfDropDownList>
             </EditTemplate>
         </GridColumn>
 
         <!-- UNIT PRICE -->
-        <GridColumn Field="UnitPrice" HeaderText="Unit Price" Format="C2">
+        <GridColumn Field="UnitPrice" HeaderText="Unit Price">
             <EditTemplate Context="row">
                 @{var item = (InvoiceDetailFormModel)row;}
 
-                <input class="form-control" value="@item.UnitPrice" readonly />
+                <SfNumericTextBox TValue="decimal" @bind-Value="@item.UnitPrice" Enabled="false">
+                </SfNumericTextBox>
             </EditTemplate>
         </GridColumn>
 
@@ -209,7 +202,7 @@
         {
             row.ProductName = "No product";
         }
-
+        //details = details.ToList();
         StateHasChanged();
     }
 
